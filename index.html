@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editör Pro - Gelişmiş Metin & Kod Paylaşımı</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --panel-bg: #111827;
+            --panel-border: #1f2937;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-glow: rgba(99, 102, 241, 0.25);
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --input-bg: #080c14;
+            --danger: #ef4444;
+        }
+
+        .light-mode {
+            --bg-main: #f3f4f6;
+            --panel-bg: #ffffff;
+            --panel-border: #e5e7eb;
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-glow: rgba(79, 70, 229, 0.15);
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --input-bg: #f9fafb;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px 16px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .app-container {
+            max-width: 900px;
+            width: 100%;
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.1rem; }
+        .brand-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent), #8b5cf6);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+        }
+
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .app-body { padding: 24px; }
+
+        .settings-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            background: var(--input-bg);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+        }
+
+        .setting-item { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 200px; }
+        .setting-item label { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .setting-item input, .setting-item select {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--panel-border);
+            background: var(--panel-bg);
+            color: var(--text-main);
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        textarea {
+            width: 100%; height: 300px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--panel-border);
+            border-radius: 14px;
+            padding: 18px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            outline: none;
+            resize: vertical;
+        }
+
+        textarea:focus { border-color: var(--accent); }
+
+        .action-bar {
+            display: flex; flex-wrap: wrap; gap: 12px;
+            justify-content: space-between; align-items: center; margin-top: 16px;
+        }
+
+        .btn {
+            background: var(--accent); color: white; border: none;
+            padding: 10px 20px; border-radius: 10px; font-weight: 600;
+            font-size: 0.88rem; cursor: pointer; display: inline-flex;
+            align-items: center; gap: 8px; transition: all 0.2s;
+        }
+
+        .btn:hover { background: var(--accent-hover); }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05); color: var(--text-muted);
+            border: 1px solid var(--panel-border);
+        }
+
+        .share-box {
+            margin-top: 16px; background: var(--input-bg);
+            border: 1px solid var(--panel-border); border-radius: 12px;
+            padding: 14px; display: none;
+        }
+
+        .share-input-group { display: flex; gap: 10px; margin-top: 8px; }
+        .share-input-group input {
+            flex: 1; background: var(--panel-bg);
+            border: 1px solid var(--panel-border); border-radius: 8px;
+            padding: 10px; color: var(--accent);
+            font-family: 'Fira Code', monospace; font-size: 0.85rem; outline: none;
+        }
+
+        #viewSection, #passwordPromptSection, #expiredSection { display: none; }
+
+        .view-card {
+            background: var(--input-bg); border: 1px solid var(--panel-border);
+            border-radius: 14px; padding: 24px; min-height: 220px;
+            font-family: 'Fira Code', monospace; font-size: 0.95rem;
+            line-height: 1.7; white-space: pre-wrap; word-break: break-word;
+        }
+
+        .timer-badge {
+            background: rgba(239, 68, 68, 0.1); color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2); padding: 4px 10px;
+            border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+        }
+
+        .status-bar {
+            padding: 10px 24px; background: var(--input-bg);
+            border-top: 1px solid var(--panel-border); display: flex;
+            justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);
+        }
+
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="app-header">
+        <div class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-code"></i></div>
+            <span>Editör Pro</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="toggleTheme()">
+                <i class="fa-solid fa-circle-half-stroke"></i> Tema
+            </button>
+        </div>
+    </div>
+
+    <div class="app-body">
+        <!-- EDITÖR MODU -->
+        <div id="editorSection">
+            <div class="settings-panel">
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-lock"></i> Parola:</label>
+                    <input type="password" id="linkPassword" placeholder="İsteğe bağlı şifre">
+                </div>
+                <div class="setting-item">
+                    <label><i class="fa-solid fa-hourglass-half"></i> Geçerlilik Süresi:</label>
+                    <select id="linkExpiry">
+                        <option value="0">Süresiz</option>
+                        <option value="600">10 Dakika</option>
+                        <option value="3600">1 Saat</option>
+                        <option value="86400">24 Saat</option>
+                        <option value="604800">7 Gün</option>
+                    </select>
+                </div>
+                <div class="setting-item" style="max-width: 140px;">
+                    <label for="fileInput" class="btn btn-secondary" style="width:100%; justify-content:center; cursor:pointer;">
+                        <i class="fa-solid fa-file-import"></i> Dosya Seç
+                    </label>
+                    <input type="file" id="fileInput" onchange="loadFile(event)">
+                </div>
+            </div>
+
+            <textarea id="editor" placeholder="Metninizi yazın veya dosya yükleyin..." oninput="updateStats()"></textarea>
+            
+            <div class="action-bar">
+                <button class="btn" onclick="generateShareLink()">
+                    <i class="fa-solid fa-bolt"></i> Özel Bağlantı Oluştur & Kopyala
+                </button>
+                <button class="btn btn-secondary" onclick="clearEditor()">
+                    <i class="fa-solid fa-trash-can"></i> Temizle
+                </button>
+            </div>
+
+            <div class="share-box" id="shareBox">
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Paylaşıma Hazır Bağlantınız:</p>
+                <div class="share-input-group">
+                    <input type="text" id="shareUrl" readonly>
+                    <button class="btn" onclick="copyLink()"><i class="fa-solid fa-copy"></i> Kopyala</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SÜRESİ DOLMUŞ KUTUSU -->
+        <div id="expiredSection" style="text-align:center; padding: 40px 10px;">
+            <i class="fa-solid fa-clock-rotate-left" style="font-size: 3.5rem; color: var(--danger); margin-bottom: 16px;"></i>
+            <h2 style="margin-bottom: 8px;">Bu Bağlantının Süresi Dolmuştur!</h2>
+            <p style="color: var(--text-muted); margin-bottom: 24px;">Belirlenen geçerlilik süresi tamamlandığı için bu içeriğe artık erişilemez.</p>
+            <a href="index.html" class="btn"><i class="fa-solid fa-plus"></i> Yeni Metin Oluştur</a>
+        </div>
+
+        <!-- PAROLA MODAL -->
+        <div id="passwordPromptSection">
+            <div style="text-align: center; padding: 30px 10px;">
+                <i class="fa-solid fa-shield-halved" style="font-size: 3rem; color: var(--accent); margin-bottom: 16px;"></i>
+                <h3 style="margin-bottom: 8px;">Bu İçerik Parola İle Korunuyor</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Lütfen parolayı girin.</p>
+                <div style="max-width: 320px; margin: 0 auto; display: flex; gap: 8px;">
+                    <input type="password" id="inputDecryptPassword" placeholder="Parola" style="flex:1; padding:10px; border-radius:8px; border:1px solid var(--panel-border); background:var(--input-bg); color:var(--text-main); outline:none;">
+                    <button class="btn" onclick="unlockContent()">Aç</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- OKUMA MODU -->
+        <div id="viewSection">
+            <div style="margin-bottom: 14px; font-weight: 600; color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; justify-content: space-between;">
+                <span><i class="fa-solid fa-file-contract"></i> Paylaşılan İçerik</span>
+                <span id="timerDisplay" class="timer-badge" style="display:none;"></span>
+            </div>
+            
+            <div class="view-card" id="textContent"></div>
+            
+            <div class="action-bar" style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="copyContent()"><i class="fa-solid fa-copy"></i> İçeriği Kopyala</button>
+                <a href="index.html" class="btn" style="text-decoration: none;"><i class="fa-solid fa-plus"></i> Yeni Metin Oluştur</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div style="display:flex; gap:16px;">
+            <span id="charCount">Karakter: 0</span>
+            <span id="wordCount">Kelime: 0</span>
+            <span id="lineCount">Satır: 0</span>
+        </div>
+        <div>UTF-8</div>
+    </div>
+</div>
+
+<script>
+    const editor = document.getElementById('editor');
+    let encryptedDataPayload = null;
+    let countdownInterval = null;
+
+    function updateStats() {
+        const text = editor.value;
+        document.getElementById('charCount').textContent = `Karakter: ${text.length}`;
+        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+        document.getElementById('wordCount').textContent = `Kelime: ${words}`;
+        const lines = text ? text.split('\n').length : 0;
+        document.getElementById('lineCount').textContent = `Satır: ${lines}`;
+    }
+
+    function toggleTheme() { document.body.classList.toggle('light-mode'); }
+
+    function loadFile(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (evt) => { editor.value = evt.target.result; updateStats(); };
+            reader.readAsText(file);
+        }
+    }
+
+    // Dünya Saat Sunucusundan (WorldTimeAPI) Anlık Güvenilir Zamanı Al
+    async function getRealNetworkTime() {
+        try {
+            const res = await fetch('https://worldtimeapi.org/api/ip');
+            const data = await res.json();
+            return Math.floor(data.unixtime);
+        } catch (e) {
+            // Sunucuya erişilemezse istemci saatini fallback kullan
+            return Math.floor(Date.now() / 1000);
+        }
+    }
+
+    // LINK OLUŞTURMA
+    async function generateShareLink() {
+        const text = editor.value;
+        if (!text.trim()) return alert('Lütfen bir metin yazın veya dosya yükleyin!');
+
+        const password = document.getElementById('linkPassword').value;
+        const durationSeconds = parseInt(document.getElementById('linkExpiry').value);
+        
+        // Şimdiki zamanı saniye cinsinden al
+        const createdAt = Math.floor(Date.now() / 1000);
+
+        let finalContent = text;
+        let isEncrypted = false;
+
+        if (password) {
+            finalContent = CryptoJS.AES.encrypt(text, password).toString();
+            isEncrypted = true;
+        }
+
+        const payload = {
+            c: finalContent,
+            e: isEncrypted ? 1 : 0,
+            t: createdAt,        // Oluşturulma Tarihi (Unix Timestamp)
+            d: durationSeconds   // Geçerlilik Süresi (Saniye)
+        };
+
+        const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+        const fullUrl = window.location.origin + window.location.pathname + '#' + encodedData;
+
+        document.getElementById('shareUrl').value = fullUrl;
+        document.getElementById('shareBox').style.display = 'block';
+
+        navigator.clipboard.writeText(fullUrl).then(() => alert('Özel bağlantınız kopyalandı!')).catch(() => {});
+    }
+
+    // SAYFA YÜKLENDİĞİNDE SÜRE KONTROLÜ
+    window.addEventListener('DOMContentLoaded', async () => {
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+            try {
+                const jsonString = decodeURIComponent(escape(atob(hash)));
+                const payload = JSON.parse(jsonString);
+
+                document.getElementById('editorSection').style.display = 'none';
+
+                // Süreli bir link ise İnternet Saat Sunucusundan gerçek zamanı doğrula
+                if (payload.d > 0) {
+                    const currentTime = await getRealNetworkTime();
+                    const expiresAt = payload.t + payload.d;
+                    const remainingSeconds = expiresAt - currentTime;
+
+                    // SÜRE DOLMUŞSA
+                    if (remainingSeconds <= 0) {
+                        document.getElementById('expiredSection').style.display = 'block';
+                        return;
+                    }
+
+                    // CANLI GERİ SAYIM BAŞLAT
+                    startCountdown(expiresAt);
+                }
+
+                // Şifreli Mi Kontrol Et
+                if (payload.e === 1) {
+                    encryptedDataPayload = payload.c;
+                    document.getElementById('passwordPromptSection').style.display = 'block';
+                } else {
+                    showContent(payload.c);
+                }
+
+            } catch (e) {
+                alert('Geçersiz veya bozuk bağlantı!');
+            }
+        }
+    });
+
+    function startCountdown(expiresAt) {
+        const timerBadge = document.getElementById('timerDisplay');
+        timerBadge.style.display = 'inline-block';
+
+        async function updateTimer() {
+            const now = Math.floor(Date.now() / 1000);
+            const diff = expiresAt - now;
+
+            if (diff <= 0) {
+                clearInterval(countdownInterval);
+                document.getElementById('viewSection').style.display = 'none';
+                document.getElementById('passwordPromptSection').style.display = 'none';
+                document.getElementById('expiredSection').style.display = 'block';
+                return;
+            }
+
+            const m = Math.floor(diff / 60);
+            const s = diff % 60;
+            timerBadge.innerHTML = `<i class="fa-solid fa-stopwatch"></i> Kalan Süre: ${m}d ${s < 10 ? '0' : ''}${s}s`;
+        }
+
+        updateTimer();
+        countdownInterval = setInterval(updateTimer, 1000);
+    }
+
+    function unlockContent() {
+        const pass = document.getElementById('inputDecryptPassword').value;
+        if (!pass) return alert('Lütfen parolayı girin.');
+
+        try {
+            const bytes = CryptoJS.AES.decrypt(encryptedDataPayload, pass);
+            const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+
+            if (!decryptedText) return alert('Hatalı parola!');
+
+            document.getElementById('passwordPromptSection').style.display = 'none';
+            showContent(decryptedText);
+        } catch (e) {
+            alert('Hatalı parola!');
+        }
+    }
+
+    function showContent(text) {
+        document.getElementById('viewSection').style.display = 'block';
+        document.getElementById('textContent').textContent = text;
+        document.getElementById('charCount').textContent = `Karakter: ${text.length}`;
+        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+        document.getElementById('wordCount').textContent = `Kelime: ${words}`;
+        const lines = text ? text.split('\n').length : 0;
+        document.getElementById('lineCount').textContent = `Satır: ${lines}`;
+    }
+
+    function copyLink() {
+        const copyText = document.getElementById('shareUrl');
+        copyText.select();
+        navigator.clipboard.writeText(copyText.value);
+        alert('Bağlantı kopyalandı!');
+    }
+
+    function copyContent() {
+        navigator.clipboard.writeText(document.getElementById('textContent').textContent);
+        alert('İçerik kopyalandı!');
+    }
+
+    function clearEditor() {
+        if(confirm('Tüm metni silmek istediğinize emin misiniz?')) {
+            editor.value = '';
+            updateStats();
+            document.getElementById('shareBox').style.display = 'none';
+        }
+    }
+</script>
+
+</body>
+</html>
