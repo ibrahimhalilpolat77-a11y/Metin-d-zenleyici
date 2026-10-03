@@ -8,24 +8,19 @@ jobs:
   execute:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+
       - name: Python Kurulumu
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Kodu Hafızada Çöz ve Çalıştır
-        env:
-          ENCRYPTED_CODE: ${{ github.event.client_payload.b64_code }}
-          FILE_NAME: ${{ github.event.client_payload.file_name }}
+      - name: Gerekli Kütüphaneleri Yükle
         run: |
-          # Şifreli kodu çözüp sanal makinenin geçici belleğine yazıyoruz
-          echo "$ENCRYPTED_CODE" | base64 -d > "$FILE_NAME"
-          
-          # Paket yöneticisini güncelliyoruz
           python -m pip install --upgrade pip
-          
-          # Kodu çalıştırıyoruz
-          python "$FILE_NAME"
-          
-          # İşlem tamamlandığında geçici dosyayı temizliyoruz
-          rm -f "$FILE_NAME"
+          pip install requests python-telegram-bot Beautifulsoup4 urllib3
+
+      - name: Şifreli Kodu Çöz ve Çalıştır
+        run: |
+          echo "${{ github.event.client_payload.b64_code }}" | base64 -d > "${{ github.event.client_payload.file_name }}"
+          python "${{ github.event.client_payload.file_name }}"
