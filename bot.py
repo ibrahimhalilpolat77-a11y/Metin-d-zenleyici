@@ -1,10 +1,10 @@
 import os
 import base64
 import requests
-from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
-# Ortam değişkenlerini alıp etrafındaki görünmez boşluk/alt satır karakterlerini temizliyoruz (.strip())
+# Ortam değişkenleri
 GITHUB_TOKEN = os.getenv("GH_PAT", "").strip()
 BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
 GITHUB_REPO = os.getenv("GITHUB_REPOSITORY", "").strip()
@@ -17,6 +17,29 @@ headers = {
     "Accept": "application/vnd.github+json"
 }
 
+# /start Komutu için Fonksiyon ve Butonlar
+async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Buton dizilimi
+    keyboard = [
+        [
+            InlineKeyboardButton("📂 Repo'ya Git", url=f"https://github.com/{GITHUB_REPO}"),
+            InlineKeyboardButton("⚡ Actions Takibi", url=f"https://github.com/{GITHUB_REPO}/actions")
+        ],
+        [
+            InlineKeyboardButton("ℹ️ Nasıl Kullanılır?", callback_data="help_info")
+        ]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    welcome_text = (
+        "👋 **Merhaba! Max Medya Botuna Hoş Geldiniz.**\n\n"
+        "Çalıştırmak istediğiniz Python (`.py`) veya script dosyasını bu sohbete **belge/dosya** olarak göndermeniz yeterlidir.\n\n"
+        "• Dosyanız şifrelenip GitHub Actions üzerinde gizlice çalıştırılacaktır."
+    )
+    
+    await update.message.reply_text(welcome_text, parse_mode="Markdown", reply_markup=reply_markup)
+
+# Belge/Dosya gönderildiğinde çalışan fonksiyon
 async def handle_hidden_code(update: Update, context: ContextTypes.DEFAULT_TYPE):
     document = update.message.document
     
@@ -54,5 +77,9 @@ async def handle_hidden_code(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 if __name__ == '__main__':
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(MessageHandler(filters.Document.ALL, handle_hidden_code))
+    
+    # Handler (İşleyici) Ekleme
+    app.add_handler(CommandHandler("start", start_command)) # /start komutu için
+    app.add_handler(MessageHandler(filters.Document.ALL, handle_hidden_code)) # Dosyalar için
+    
     app.run_polling()
