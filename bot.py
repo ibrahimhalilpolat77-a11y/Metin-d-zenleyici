@@ -4,9 +4,14 @@ import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
+# Ortam değişkenlerini alıyoruz
 GITHUB_TOKEN = os.getenv("GH_PAT")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GITHUB_REPO = os.getenv("GITHUB_REPOSITORY")  # GitHub Actions ortamında otomatik çekilir (kullanici/repo)
+GITHUB_REPO = os.getenv("GITHUB_REPOSITORY")  # Otomatik çekilir (ibrahimhalilpolat77-a11y/Metin-d-zenleyici)
+
+# Token kontrolü
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN ortam değişkeni bulunamadı! Lütfen GitHub Secrets ayarlarını kontrol edin.")
 
 headers = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -21,16 +26,13 @@ async def handle_hidden_code(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     await update.message.reply_text("📥 Kod alındı, şifreleniyor ve GitHub Actions'a iletiliyor...")
 
-    # Telegram'dan gelen dosyayı indiriyoruz
     file = await context.bot.get_file(document.file_id)
     file_bytes = await file.download_as_bytearray()
     
-    # Kodu Base64 ile şifreliyoruz (GitHub commit/log kısımlarında kod görünmez)
     b64_code = base64.b64encode(file_bytes).decode('utf-8')
 
     url = f"https://api.github.com/repos/{GITHUB_REPO}/dispatches"
 
-    # Commit atmadan, şifreli veriyi payload içinde gönderiyoruz
     data = {
         "event_type": "run-hidden-code",
         "client_payload": {
