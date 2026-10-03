@@ -1,0 +1,31 @@
+name: Dynamic Encrypted Code Runner
+
+on:
+  repository_dispatch:
+    types: [run-hidden-code]
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Python Kurulumu
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Kodu Hafızada Çöz ve Çalıştır
+        env:
+          ENCRYPTED_CODE: ${{ github.event.client_payload.b64_code }}
+          FILE_NAME: ${{ github.event.client_payload.file_name }}
+        run: |
+          # Şifreli kodu çözüp sanal makinenin geçici belleğine yazıyoruz
+          echo "$ENCRYPTED_CODE" | base64 -d > "$FILE_NAME"
+          
+          # Paket yöneticisini güncelliyoruz
+          python -m pip install --upgrade pip
+          
+          # Kodu çalıştırıyoruz
+          python "$FILE_NAME"
+          
+          # İşlem tamamlandığında geçici dosyayı temizliyoruz
+          rm -f "$FILE_NAME"
