@@ -4,14 +4,13 @@ import requests
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
-# Ortam değişkenlerini alıyoruz
-GITHUB_TOKEN = os.getenv("GH_PAT")
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-GITHUB_REPO = os.getenv("GITHUB_REPOSITORY")  # Otomatik çekilir (ibrahimhalilpolat77-a11y/Metin-d-zenleyici)
+# Ortam değişkenlerini alıp etrafındaki görünmez boşluk/alt satır karakterlerini temizliyoruz (.strip())
+GITHUB_TOKEN = os.getenv("GH_PAT", "").strip()
+BOT_TOKEN = os.getenv("BOT_TOKEN", "").strip()
+GITHUB_REPO = os.getenv("GITHUB_REPOSITORY", "").strip()
 
-# Token kontrolü
 if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN ortam değişkeni bulunamadı! Lütfen GitHub Secrets ayarlarını kontrol edin.")
+    raise ValueError("BOT_TOKEN ortam değişkeni bulunamadı veya boş!")
 
 headers = {
     "Authorization": f"Bearer {GITHUB_TOKEN}",
